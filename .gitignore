@@ -1,0 +1,9 @@
+# Hugo build output
+public
+resources
+.hugo_cache
+.hugo_build.lock
+
+# OS / editor
+.DS_Store
+*.exe

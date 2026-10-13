@@ -1,0 +1,20 @@
+baseURL                 = "/"
+locale                  = "en-us"
+title                   = "Hugo Theme Stack"
+theme                   = "hugo-theme-stack"
+# Theme i18n support
+# See i18n folder for available languages
+defaultContentLanguage  = "en"
+# Set hasCJKLanguage to true if DefaultContentLanguage is a CJK language
+# This will make .Summary and .WordCount behave correctly
+hasCJKLanguage          = true
+
+[pagination]
+    pagerSize = 3
+
+[permalinks]
+    post = "/p/:slug/"
+    page = "/:slug/"
+
+[services.disqus]
+    shortname = "hugo-theme-stack"
