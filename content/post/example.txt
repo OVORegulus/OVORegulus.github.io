@@ -1,0 +1,13 @@
+---
+title: Pagination Test 01
+date: 2000-01-01
+description: Test post 01 for pagination behavior.   #标签下面的小标签
+slug: pagination-test-01            	#slug 就是给这篇文章起一个专门用于网址的“英文绰号”。
+tags:                                     #标签
+  - pagination										
+  - test
+categories:			    #分类
+  - Testing
+draft: false
+---
+

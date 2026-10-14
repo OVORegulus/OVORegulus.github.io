@@ -8,11 +8,11 @@
 
 [zh]
     label  = "简体中文"
-    title  = "Hugo 主题 Stack"
+    title  = "Regulus的个人blog"
     weight = 2
 
     [zh.params.sidebar]
-        subtitle = "为博客设计的卡片式 Hugo 主题"
+        subtitle = "一个小ACG的爱好者，目前是python和cpp在学，至于java我祝他好运"
 
 [zh-hant-tw]
     label  = "正體中文"

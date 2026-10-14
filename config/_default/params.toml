@@ -1,39 +1,66 @@
 mainSections   = ["post"]
 rssFullContent = true
-favicon        = "img/avatar.png"
-
+favicon        = "img/avatar.png" #这个是头像
+# ==============================================================================
+# 页脚配置 (Footer)
+# ==============================================================================
 [footer]
+    # 博客创建的年份，通常用于显示在页脚的 "© 2020-2026"
     since = 2020
 
+# ==============================================================================
+# 侧边栏配置 (Sidebar) - 也就是你个人信息展示区
+# ==============================================================================
 [sidebar]
+    # 个人简介旁边的装饰表情符号
     emoji    = "✏️"
+    # 个人简介/副标题。你可以把它改成 "热爱编程的某某" 或 "记录生活与思考"
     subtitle = "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    # 个人头像图片的路径
     avatar   = "img/avatar.png"
 
+# ==============================================================================
+# 文章配置 (Article)
+# ==============================================================================
 [article]
+    # 版权协议设置
     [article.license]
+        # 是否在文章末尾显示版权声明
         enabled = true
+        # 默认使用的版权协议链接（这里使用的是 CC BY-NC-SA 4.0）
         default = "Licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)"
 
+# ==============================================================================
+# 挂件/组件配置 (Widgets) - 控制首页和页面的功能模块
+# ==============================================================================
 [widgets]
+    # 首页显示的模块列表（按顺序排列）
     homepage = [
-        { type = "search" },
-        { type = "archives", params = { limit = 5 } },
-        { type = "categories", params = { limit = 10 } },
-        { type = "tag-cloud", params = { limit = 10 } },
+        { type = "search" },                # 搜索框
+        { type = "archives", params = { limit = 5 } }, # 文章归档（显示最近5条）
+        { type = "categories", params = { limit = 10 } }, # 分类列表（显示前10个）
+        { type = "tag-cloud", params = { limit = 10 } },  # 标签云（显示前10个）
     ]
-    page     = [{ type = "toc" }]
+    # 文章详情页显示的模块
+    page     = [{ type = "toc" }]          # TOC (Table of Contents) 文章目录
 
+# ==============================================================================
+# 评论系统配置 (Comments)
+# ==============================================================================
 [comments]
-    # See complete configuration in config/_default/params.toml
+    # 是否启用评论功能
     enabled  = true
+    # 使用的评论平台提供商。这里是 "disqus"，你也可以改为其他支持的平台
     provider = "disqus"
 
-# GDPR Cookie Consent Configuration
-# When enabled, analytics and functional cookies require user consent
+# ==============================================================================
+# GDPR Cookie 同意配置 (欧洲隐私保护法规相关)
+# ==============================================================================
 [cookies]
+    # 是否在页面底部弹出 "我们使用 Cookie" 的同意提示栏
     enabled = false
 
+    # 具体的 Cookie 类别权限
     [cookies.categories]
-        analytics  = true
-        functional = true
+        analytics  = true  # 统计分析类 Cookie (如 Google Analytics)
+        functional = true  # 功能性 Cookie (如保存用户设置)
