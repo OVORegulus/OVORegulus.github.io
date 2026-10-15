@@ -1,0 +1,24 @@
+{{- /*
+  覆盖主题自带的 footer.html（原文件：themes/hugo-theme-stack/layouts/_partials/footer/footer.html）
+
+  改动点：
+  1. 版权主体优先取 params.author / params.copyright，而不是站点标题，
+     所以显示 "© 2020 - 2026 OVORegulus" 而不是 "…OVORegulus 的个人博客"。
+  2. 移除主题默认的 "使用 Hugo 构建" 和 "主题 Stack 由 Jimmy 设计" 两行署名。
+     如需恢复，把下面注释掉的两行 i18n 调用取消注释，并放回 Generator/Theme/DesignedBy 变量即可。
+*/ -}}
+<footer class="site-footer">
+    <section class="copyright">
+        &copy;
+        {{ if and (.Site.Params.footer.since) (ne .Site.Params.footer.since (int (now.Format "2006"))) }}
+            {{ .Site.Params.footer.since }} -
+        {{ end }}
+        {{ now.Format "2006" }} {{ default .Site.Title (default .Site.Copyright .Site.Params.author) }}
+    </section>
+
+    {{- with .Site.Params.footer.customText }}
+    <section class="powerby">
+        {{ . | safeHTML }}
+    </section>
+    {{- end }}
+</footer>

@@ -1,0 +1,9 @@
+{{- /*
+  项目自定义的页脚脚本。
+  主题会在 footer/include.html 里调用这个 partial（对应主题的同名文件），
+  所以这里写的内容会追加到每个页面 </body> 之前。
+
+  目前只做一件事：加载 PJAX，让站内跳转变成局部替换，
+  从而使左侧边栏的播放器不被销毁、音乐不中断。
+*/ -}}
+<script src="{{ "js/pjax.js" | relURL }}" defer></script>

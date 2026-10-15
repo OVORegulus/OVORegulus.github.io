@@ -1,0 +1,527 @@
+// ==============================================================================
+// 自定义样式
+// 主题在 assets/scss/style.scss 末尾会自动 @import "custom.scss"，
+// 所以这个文件里的规则最后加载，可以直接覆盖主题默认样式，且不用改主题本体。
+// ==============================================================================
+
+// 播放键相对控制条中心的水平偏移量：
+//   0    = 严格居中（当前值）
+//   18px = 往右挪一点（右侧那组比左侧宽时，居中会显得偏左）
+//   负值 = 往左
+// 放在 :root 是为了让基础规则和 :active 共用同一个值 ——
+// :active 若写 transform:none 会把偏移抵消掉，按钮按下去会「跳回」中心。
+:root {
+    --mp-play-shift: 0px;
+}
+
+// ------------------------------------------------------------------------------
+// 页脚链接
+// 主题默认把 .powerby a 设成 body 文字色且无下划线，导致 GitHub / BiliBili / 邮箱
+// 看起来和普通文字一模一样、认不出是可以点的。这里改成强调色 + 下划线。
+// ------------------------------------------------------------------------------
+footer.site-footer .powerby {
+    a {
+        color: var(--accent-color);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        transition: color 0.2s ease;
+
+        &:hover {
+            color: var(--accent-color-darker);
+        }
+    }
+}
+
+// ------------------------------------------------------------------------------
+// 侧边栏背景音乐播放器
+// 全部使用主题的 CSS 变量，因此自动跟随暗色模式。
+// 结构见 layouts/_partials/music-player.html，逻辑见 static/js/music-player.js
+//
+// 布局（自上而下）：
+//   mp-header     「音乐」标题 + 曲目数
+//   mp-info       歌名 / 歌手（无封面图，整行留文字）
+//   mp-progress   进度条 + 时间
+//   mp-transport  上一首 / 播放暂停 / 下一首 / 静音 / 歌单
+//   mp-list       歌单（默认折叠）
+// ------------------------------------------------------------------------------
+#music-player.music-player {
+    --mp-accent: #52b788; // 播放器专属绿色强调色（参考设计稿）
+
+    list-style: none;
+    padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
+    border-radius: var(--card-border-radius);
+    background: var(--card-background);
+    box-shadow: var(--shadow-l1);
+    font-size: 1.4rem;
+    color: var(--card-text-color-secondary);
+
+    svg {
+        display: block;
+    }
+
+    // ---------------- 标题栏 ----------------
+    .mp-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .mp-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--card-text-color-main);
+        font-weight: 700;
+        font-size: 1.5rem;
+
+        svg {
+            width: 15px;
+            height: 15px;
+            color: var(--mp-accent);
+        }
+
+        // 左侧竖条装饰
+        &::before {
+            content: "";
+            width: 3px;
+            height: 14px;
+            border-radius: 2px;
+            background: var(--mp-accent);
+            margin-right: 2px;
+        }
+    }
+
+    .mp-count {
+        font-size: 1.1rem;
+        color: var(--card-text-color-tertiary);
+    }
+
+    // ---------------- 当前曲目 ----------------
+    // 没有封面图，整行宽度都留给歌名/歌手。
+    // 不设固定高度：歌名折两行时容器要能自然长高，否则会压到下面的进度条。
+    .mp-info {
+        display: flex;
+        align-items: center;
+    }
+
+    .mp-meta {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .mp-title {
+        color: var(--card-text-color-main);
+        font-size: 1.55rem;
+        font-weight: 700;
+        line-height: 1.35;
+        word-break: break-word;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;      // 最多两行，超出省略
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .mp-artist {
+        font-size: 1.15rem;
+        color: var(--card-text-color-tertiary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        &:empty {
+            display: none;
+        }
+    }
+
+    // ---------------- 进度条 ----------------
+    .mp-progress {
+        margin-top: var(--spacing-sm);
+    }
+
+    .mp-seek {
+        display: block;
+        height: 3px;
+        border-radius: 2px;
+        background: var(--body-background);
+        cursor: pointer;
+        overflow: hidden;
+        transition: height 0.15s ease;
+
+        &:hover {
+            height: 5px;
+        }
+    }
+
+    .mp-seek-fill {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: var(--mp-accent);
+        transition: width 0.15s linear;
+    }
+
+    // 时间行：0:03 / 4:26 一起靠左（已回退右对齐）
+    .mp-time {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        margin-top: 4px;
+        font-size: 1.1rem;
+        color: var(--card-text-color-tertiary);
+        font-variant-numeric: tabular-nums;
+
+        i {
+            font-style: normal;
+            opacity: 0.6;
+        }
+    }
+
+    // ---------------- 播放控制 ----------------
+    // 用三栏网格把播放键居中：左组 | 播放键 | 右组。
+    // 左右两组按钮数相同、宽度相等，所以中间那栏必然落在容器正中，
+    // 而且播放键是**正常文档流里的网格项**，对齐完全交给 align-items:center，
+    // 不再需要 absolute + translate 那套（那套的垂直居中存在浏览器渲染差异，
+    // 出现过图标比邻居偏低的问题）。
+    .mp-transport {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;             // 三栏内容统一垂直居中
+        margin-top: var(--spacing-sm);
+        min-height: 34px;
+    }
+
+    .mp-side {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+    }
+
+    .mp-side--l {
+        justify-content: flex-start;
+    }
+
+    .mp-side--r {
+        justify-content: flex-end;
+    }
+
+    // ---------------- 音量键 + 悬停滑出的音量条 ----------------
+    .mp-vol {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    // 音量条默认收起，鼠标移到音量键上（或聚焦/拖动中）才展开。
+    //
+    // 两个坑（都踩过）：
+    // 1) 不要居中在音量键上：那样弹框会横跨到卡片中间，盖住居中的播放键
+    //    （播放键横向 91~112，弹框若居中占 90~182 -> 重叠，点暂停变成点弹框）。
+    //    改成 right:-8px 让弹框整体待在播放键右侧。
+    // 2) 隐藏时必须 pointer-events:none：否则它虽然看不见，仍会吃掉鼠标事件。
+    //    visibility 还能撑 0.15s 的过渡时间，这段时间正好在挡点击。
+    .mp-vol-pop {
+        position: absolute;
+        bottom: calc(100% + 10px);
+        right: -8px;
+        transform: translateY(3px);
+        padding: 5px 8px;
+        border-radius: 6px;
+        background: var(--card-background);
+        box-shadow: var(--shadow-l1), 0 0 0 1px var(--body-background);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s linear 0.15s;
+        z-index: 5;
+    }
+
+    .mp-vol:hover .mp-vol-pop,
+    .mp-vol:focus-within .mp-vol-pop,
+    .mp-vol.is-open .mp-vol-pop {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: translateY(0);
+        transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s;
+    }
+
+    .mp-vol-range {
+        display: block;
+        width: 76px;
+        height: 4px;
+        margin: 0;
+        padding: 0;
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        background: var(--body-background);
+        border-radius: 2px;
+        outline: none;
+
+        &::-webkit-slider-thumb {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background: var(--mp-accent);
+            border: 0;
+            cursor: pointer;
+        }
+
+        &::-moz-range-thumb {
+            width: 11px;
+            height: 11px;
+            border: 0;
+            border-radius: 50%;
+            background: var(--mp-accent);
+            cursor: pointer;
+        }
+    }
+
+    // 播放键：不要圆圈——只有图标本身，用强调色（绿色）
+    //
+    // 位置：网格中间那栏 + justify-self:center（水平居中于容器），
+    // 再由 --mp-play-shift 往右微调。因为右侧那组（音量+列表）比左侧宽，
+    // 严格居中时视觉上会偏左，所以默认往右挪一点。
+    // 想改位置只改这一个变量即可：0 = 严格居中，负值 = 往左。
+    .mp-btn--play {
+        grid-column: 2;
+        justify-self: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;                     // 固定，图标切换时盒子不变
+        height: 28px;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        color: var(--mp-accent);
+        line-height: 0;                  // 不让空白文本节点撑高
+        transform: translateX(var(--mp-play-shift));
+
+        // 没有圆圈了，图标可以稍大一点才看得清
+        svg {
+            width: 21px;
+            height: 21px;
+        }
+
+        // 消灭空白文本节点产生的行高（两个图标模板换行数不同，会给按钮撑出不同高度）
+        // 注意：这里只设 line-height/font-size，不要写 display ——
+        // 写了 display:block 会把下面「暂停图标默认 display:none」的规则覆盖掉，
+        // 导致播放和暂停两个图标同时显示。
+        .mp-ico-play,
+        .mp-ico-pause {
+            line-height: 0;
+            font-size: 0;
+        }
+
+        &:hover {
+            background: none;
+            color: var(--mp-accent);
+            opacity: 0.75;
+        }
+    }
+
+    // 按下时保持同一个偏移量（若写 transform:none 会把偏移抵消掉，按钮会「跳回」中心）
+    .mp-btn--play:active {
+        transform: translateX(var(--mp-play-shift));
+        opacity: 1;
+    }
+
+    .mp-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border: 0;
+        background: none;
+        cursor: pointer;
+        color: var(--card-text-color-secondary);
+        transition: color 0.2s ease, transform 0.15s ease;
+
+        svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        &:hover {
+            color: var(--mp-accent);
+        }
+
+        &:active {
+            transform: scale(0.92);
+        }
+    }
+
+    // 播放/暂停图标按状态切换
+    .mp-ico-pause {
+        display: none;
+    }
+
+    &.is-playing {
+        .mp-ico-play {
+            display: none;
+        }
+
+        .mp-ico-pause {
+            display: block;
+        }
+    }
+
+    // 静音时切到「静音」图标
+    .mp-ico-mute {
+        display: none;
+    }
+
+    &.is-muted {
+        .mp-ico-vol {
+            display: none;
+        }
+
+        .mp-ico-mute {
+            display: block;
+            color: #e07a5f;
+        }
+    }
+
+    // 歌单按钮：展开时高亮
+    .mp-btn--list[aria-expanded="true"] {
+        color: var(--mp-accent);
+    }
+
+    // ---------------- 歌单（默认折叠）----------------
+    .mp-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.25s ease, margin-top 0.25s ease;
+
+        &.is-open {
+            max-height: 132px;
+            overflow-y: auto;
+            margin-top: var(--spacing-sm);
+        }
+
+        li + li {
+            margin-top: 2px;
+        }
+
+        button {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            width: 100%;
+            padding: 3px 4px;
+            border: 0;
+            background: none;
+            cursor: pointer;
+            text-align: left;
+            border-radius: 4px;
+            color: var(--card-text-color-secondary);
+            font-size: 1.25rem;
+            transition: background-color 0.2s ease;
+
+            &:hover {
+                background: var(--body-background);
+            }
+
+            &.is-active {
+                color: var(--mp-accent);
+                font-weight: 700;
+            }
+        }
+    }
+
+    .mp-index {
+        flex-shrink: 0;
+        width: 1.4em;
+        text-align: right;
+        color: var(--card-text-color-tertiary);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .mp-name {
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .mp-by {
+        flex-shrink: 0;
+        font-size: 1.05rem;
+        color: var(--card-text-color-tertiary);
+    }
+
+    // ---------------- 提示 ----------------
+    .mp-hint {
+        margin: var(--spacing-xs) 0 0;
+        font-size: 1.1rem;
+        color: var(--mp-accent);
+        text-align: center;
+        cursor: pointer;
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    // 没有音频文件时脚本会把整块隐藏
+    audio {
+        display: none;
+    }
+}
+
+// ------------------------------------------------------------------------------
+// 小屏浮动提示按钮
+// 小屏下 #main-menu 默认 display:none，播放器被折叠进汉堡菜单，
+// 访客看不到「点击开启声音」，音乐却在静音播放。这个按钮负责让人发现它。
+// ------------------------------------------------------------------------------
+.music-player-fab {
+    display: none;                     // 桌面端永不显示
+    position: fixed;
+    right: var(--container-padding);
+    bottom: 20px;
+    z-index: 99;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: 0;
+    border-radius: 999px;
+    background: #52b788;
+    color: #fff;
+    font-size: 1.3rem;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+
+    svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    &.is-visible {
+        display: inline-flex;
+    }
+}
+
+@media (max-width: 767px) {
+    // 移动端侧边栏里的播放器跟随菜单一起展开，不需要额外留白
+    #music-player.music-player {
+        margin-top: var(--spacing-sm);
+    }
+}
+
+// 尊重「减少动态效果」的系统设置
+@media (prefers-reduced-motion: reduce) {
+    #music-player.music-player .mp-list {
+        transition: none;
+    }
+}

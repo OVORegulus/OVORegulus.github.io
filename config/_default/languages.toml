@@ -1,31 +1,35 @@
-[en]
-    label  = "English"
-    title  = "Hugo Theme Stack"
-    weight = 1
-
-    [en.params.sidebar]
-        subtitle = "Card-style Hugo theme designed for bloggers"
-
+# ==============================================================================
+# 语言配置：仅中文
+# defaultContentLanguage = "zh" 定义在 hugo.toml 中。
+# 单语言时主题不会渲染语言切换下拉框。
+#
+# 说明：content/ 里仍保留着 *.ja.md / *.zh-hant-tw.md 等变体文件，
+# 但因为这里没有注册对应语言，它们不会参与渲染、也不会生成任何页面。
+# 哪天想恢复多语言，取消下面注释（并补上标题等参数）即可。
+# ==============================================================================
 [zh]
+    locale = "zh-cn"
     label  = "简体中文"
     title  = "Regulus的个人blog"
-    weight = 2
+    weight = 1
 
     [zh.params.sidebar]
         subtitle = "一个小ACG的爱好者，目前是python和cpp在学，至于java我祝他好运"
 
-[zh-hant-tw]
-    label  = "正體中文"
-    title  = "Hugo 主題 Stack"
-    weight = 3
-
-    [zh-hant-tw.params.sidebar]
-        subtitle = "為博客設計的卡片式 Hugo 主題"
-
-[ja]
-    label  = "日本語"
-    title  = "Hugo Theme Stack"
-    weight = 4
-
-    [ja.params.sidebar]
-        subtitle = "ブログ用のカードスタイルの Hugo テーマ"
+# [zh-hant-tw]
+#     locale = "zh-tw"
+#     label  = "正體中文"
+#     title  = "Hugo 主題 Stack"
+#     weight = 2
+#
+#     [zh-hant-tw.params.sidebar]
+#         subtitle = "為博客設計的卡片式 Hugo 主題"
+#
+# [ja]
+#     locale = "ja-jp"
+#     label  = "日本語"
+#     title  = "Hugo Theme Stack"
+#     weight = 3
+#
+#     [ja.params.sidebar]
+#         subtitle = "ブログ用のカードスタイルの Hugo テーマ"

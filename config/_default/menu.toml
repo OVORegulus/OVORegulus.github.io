@@ -1,15 +1,43 @@
+# ==============================================================================
+# 主菜单 (Main navigation) —— 显示在左侧边栏顶部
+# 顺序：首页 | 文章 | 关于 | 归档 | 链接
+# 说明：首页/关于/归档/链接 的菜单项写在各自页面的 front matter 里，
+#       这里只补充一个指向文章列表的 "文章" 入口。
+# ==============================================================================
+[[main]]
+    name       = "文章"
+    pageRef    = "/post"
+    weight     = -95
+    identifier = "posts"
+
+    [main.params]
+        icon = "hash"
+
+# ==============================================================================
+# 社交图标 (Social links) —— 显示在侧边栏头像下方
+# ==============================================================================
 [[social]]
     identifier = "github"
     name       = "GitHub"
-    url        = "https://github.com/CaiJimmy/hugo-theme-stack"
+    url        = "https://github.com/OVORegulus"
 
     [social.params]
-        icon = "brand-github"
+        icon   = "brand-github"
+        newTab = true
 
 [[social]]
-    identifier = "twitter"
-    name       = "Twitter"
-    url        = "https://twitter.com"
+    identifier = "bilibili"
+    name       = "BiliBili"
+    url        = "https://space.bilibili.com/1958074316"
 
     [social.params]
-        icon = "brand-twitter"
+        icon   = "brand-bilibili"
+        newTab = true
+
+[[social]]
+    identifier = "mail"
+    name       = "邮箱"
+    url        = "mailto:regulus@hunnu.edu.cn"
+
+    [social.params]
+        icon = "mail"

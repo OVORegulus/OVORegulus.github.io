@@ -1,0 +1,24 @@
+{{- /*
+  播放器用到的 SVG 图标。
+  用 partialCached 调用，整站只渲染一次，返回一个 map 供 music-player.html 取用。
+
+  键名 -> 文件（放在 assets/icons/ 下）
+    music      音乐音符（标题栏）
+    play       播放（三角）
+    pause      暂停（双竖线）
+    back       上一首
+    forward    下一首
+    volume     有声
+    volumeOff  静音
+    list       歌单列表
+*/ -}}
+{{- return (dict
+    "music"     (partial "helper/icon" "music")
+    "play"      (partial "helper/icon" "player-play")
+    "pause"     (partial "helper/icon" "player-pause")
+    "back"      (partial "helper/icon" "player-skip-back")
+    "forward"   (partial "helper/icon" "player-skip-forward")
+    "volume"    (partial "helper/icon" "volume")
+    "volumeOff" (partial "helper/icon" "volume-off")
+    "list"      (partial "helper/icon" "messages")
+) -}}

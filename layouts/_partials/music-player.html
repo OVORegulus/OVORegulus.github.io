@@ -1,0 +1,195 @@
+{{- /*
+  背景音乐播放器（侧边栏）
+
+  歌单在 config/_default/params.toml 的 [musicPlayer] 里配置，例如：
+      [[musicPlayer.playlist]]
+          name   = "曲名"
+          artist = "作者"          # 可选
+          src    = "audio/xxx.mp3" # 相对 static/ 的路径
+  把 mp3 放进 static/audio/ 即可。
+
+  行为：进入页面静音自动播放，显示「点击开启声音」提示，访客点一下就有声。
+  （带声音的自动播放会被所有现代浏览器拦截，静音播放是唯一可行的方式）
+*/ -}}
+{{- $mp := .Site.Params.musicPlayer -}}
+{{- if and $mp $mp.enable -}}
+    {{- /*
+      歌单解析
+      ------------------------------------------------------------------
+      默认「自动发现」：assets/audio/ 下所有音频文件自动进歌单，
+      按文件名排序，文件名即曲名（会自动去掉 01- 这类序号前缀）。
+
+      如需自定义曲名/歌手，在 params.toml 里针对该文件写一条覆盖：
+          [[musicPlayer.playlist]]
+              src    = "audio/01-示例音频.wav"
+              name   = "想显示的名字"
+              artist = "歌手"
+      src 只需写成「audio/<文件名>」，也可以直接写文件名。
+
+      想完全手写歌单（不用自动发现），设 autoDiscover = false。
+    */ -}}
+    {{- $auto := true -}}
+    {{- if eq $mp.autoDiscover false }}{{ $auto = false }}{{ end -}}
+
+    {{- /* 覆盖表：以文件名为键（注意用方括号取值，见下方说明） */ -}}
+    {{- $overrides := dict -}}
+    {{- range $mp.playlist -}}
+        {{- if .src -}}
+            {{- $overrides = merge $overrides (dict (path.Base .src) .) -}}
+        {{- end -}}
+    {{- end -}}
+
+    {{- $tracks := slice -}}
+    {{- $used := slice -}}
+    {{- if $auto -}}
+        {{- /*
+          只挑音频文件，避免 README.md 之类被当成歌曲。
+          glob 用 {mp3,ogg,...} 逐个扩展名匹配，Hugo 的 Match 支持这种花括号写法。
+        */ -}}
+        {{- $pattern := "audio/*.{mp3,MP3,m4a,ogg,oga,opus,flac,wav,WAV,aac,weba,webm}" -}}
+        {{- range resources.Match $pattern -}}
+            {{- /*
+              资源 .Name 是「/audio/xxx.wav」，而覆盖表的键是「xxx.wav」，
+              所以要用 path.Base 取纯文件名再查，否则永远对不上。
+            */ -}}
+            {{- $key := path.Base .Name -}}
+            {{- $base := path.BaseName .Name -}}
+            {{- $ov := index $overrides $key -}}
+            {{- $title := "" -}}
+            {{- with $ov -}}
+                {{- $title = .name -}}
+                {{- $used = $used | append (path.Base .src) -}}
+            {{- end -}}
+            {{- if not $title -}}
+                {{- /*
+                  文件名 -> 曲名：
+                    1) 去掉开头的序号（01- / 02_ / 03. 等）
+                    2) 下划线和连字符都换成空格，最后合并多余空格
+                  例：01-ヨルシカ - 太陽  -> ヨルシカ 太陽
+                      02-night-drive    -> night drive
+                      03_lofi_study     -> lofi study
+
+                  注意：Hugo 的 replaceRE 用的是 Go 正则引擎，不支持 lookahead/lookbehind
+                  （写 (?<!\s) 会报 "invalid named capture" 并直接让构建失败）。
+                */ -}}
+                {{- $title = replaceRE `^\d+\s*[-_.]\s*` "" $base -}}
+                {{- $title = $title | replaceRE `[-_]+` " " -}}
+                {{- $title = $title | replaceRE `\s+` " " | strings.TrimSpace -}}
+            {{- end -}}
+            {{- $artist := "" -}}
+            {{- with $ov }}{{ $artist = .artist }}{{ end -}}
+            {{- $tracks = $tracks | append (dict "name" $title "artist" $artist "src" .RelPermalink) -}}
+        {{- end -}}
+
+        {{- /* 覆盖表里写了但目录里没这个文件 —— 提醒一下，避免写错文件名却毫无反馈 */ -}}
+        {{- range $mp.playlist -}}
+            {{- if and .src (not (in $used (path.Base .src))) -}}
+                {{- warnf "musicPlayer: 覆盖项 src=%q 在 assets/audio/ 下没找到，已忽略（请检查文件名）" .src -}}
+            {{- end -}}
+        {{- end -}}
+    {{- else -}}
+        {{- range $mp.playlist -}}
+            {{- $tracks = $tracks | append (dict "name" .name "artist" .artist "src" (.src | relURL)) -}}
+        {{- end -}}
+    {{- end -}}
+
+    {{- if $tracks -}}
+        {{- $icons := partialCached "helper/music-icons.html" . -}}
+        <li id="music-player" class="music-player"
+            data-autoplay="{{ if eq $mp.autoplay false }}false{{ else }}true{{ end }}"
+            data-volume="{{ $mp.volume | default 0.5 }}"
+            data-loop="{{ $mp.loop | default "all" }}">
+
+            {{- /* 标题栏 */ -}}
+            <div class="mp-header">
+                <span class="mp-label">{{ $icons.music }}<span>音乐</span></span>
+                <span class="mp-count">{{ len $tracks }} 首</span>
+            </div>
+
+            {{- /* 当前曲目（无封面图，整行留给歌名/歌手） */ -}}
+            <div class="mp-info">
+                <span class="mp-meta">
+                    <span class="mp-title">未在播放</span>
+                    <span class="mp-artist"></span>
+                </span>
+            </div>
+
+            {{- /* 进度条 */ -}}
+            <div class="mp-progress">
+                <span class="mp-seek" data-mp="seek" role="slider" tabindex="0"
+                      aria-label="播放进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <span class="mp-seek-fill"></span>
+                </span>
+                <span class="mp-time">
+                    <span class="mp-cur">0:00</span><i>/</i><span class="mp-dur">0:00</span>
+                </span>
+            </div>
+
+            {{- /*
+              播放控制，从左到右：上一首 · 播放/暂停 · 下一首 · 音量 · 播放列表
+              播放键用绝对定位钉在容器正中（left:50% + translateX(-50%)），
+              左右各 2 个按钮做对称 —— 这样既不偏心，也不受按钮多少影响。
+              音量键：点击静音/取消静音，鼠标移上去滑出音量条。
+            */ -}}
+            <div class="mp-transport">
+                <div class="mp-side mp-side--l">
+                    <button type="button" class="mp-btn" data-mp="prev" title="上一首" aria-label="上一首">{{ $icons.back }}</button>
+                    <button type="button" class="mp-btn" data-mp="next" title="下一首" aria-label="下一首">{{ $icons.forward }}</button>
+                </div>
+                {{- /* 两个图标用 {{- -}} 收紧空白：span 之间的换行会变成文本节点占行高 */ -}}
+                <button type="button" class="mp-btn mp-btn--play" data-mp="toggle" title="播放/暂停" aria-label="播放/暂停"
+                    ><span class="mp-ico-play">{{- $icons.play -}}</span
+                    ><span class="mp-ico-pause">{{- $icons.pause -}}</span
+                ></button>
+                <div class="mp-side mp-side--r">
+                    <div class="mp-vol" data-mp="volwrap">
+                        <button type="button" class="mp-btn mp-vol-btn" data-mp="mute"
+                                title="点击静音，移上来调音量" aria-label="静音或调节音量">
+                            <span class="mp-ico-vol">{{ $icons.volume }}</span>
+                            <span class="mp-ico-mute">{{ $icons.volumeOff }}</span>
+                        </button>
+                        <span class="mp-vol-pop">
+                            <input type="range" class="mp-vol-range" data-mp="volume"
+                                   min="0" max="100" step="1"
+                                   value="{{ math.Round (mul ($mp.volume | default 0.5) 100) }}"
+                                   aria-label="音量">
+                        </span>
+                    </div>
+                    <button type="button" class="mp-btn mp-btn--list" data-mp="list" title="歌单" aria-label="展开歌单" aria-expanded="false">
+                        {{ $icons.list }}
+                    </button>
+                </div>
+            </div>
+
+            {{- /* 歌单（默认折叠） */ -}}
+            <ol class="mp-list">
+                {{- range $i, $t := $tracks }}
+                    <li>
+                        <button type="button" data-mp="track" data-index="{{ $i }}" data-src="{{ $t.src }}">
+                            <span class="mp-index">{{ add $i 1 }}</span>
+                            <span class="mp-name">{{ $t.name | default $t.src }}</span>
+                            {{- with $t.artist }}<span class="mp-by">{{ . }}</span>{{ end -}}
+                        </button>
+                    </li>
+                {{- end }}
+            </ol>
+
+            <p class="mp-hint" data-mp="hint">点击开启声音</p>
+            <audio preload="none" playsinline></audio>
+        </li>
+
+        {{- /*
+          小屏（<768px）时 #main-menu 默认是 display:none，整块播放器被折叠进汉堡菜单里。
+          这样访客在手机上根本看不到「点击开启声音」的提示，音乐却在静音播放。
+          所以额外放一个浮动按钮：点它即解除静音，并跟着播放器的状态自动显示/隐藏。
+        */ -}}
+        <button type="button" id="music-player-fab" class="music-player-fab" aria-label="播放背景音乐">
+            {{ $icons.music }}
+            <span>点击播放音乐</span>
+        </button>
+
+        {{- /* 音量/静音逻辑单独一个文件；顺序放在播放器之后，两者通过 root.mpVolume 通信 */ -}}
+        <script src="{{ "js/music-player.js" | relURL }}" defer></script>
+        <script src="{{ "js/music-volume.js" | relURL }}" defer></script>
+    {{- end -}}
+{{- end -}}

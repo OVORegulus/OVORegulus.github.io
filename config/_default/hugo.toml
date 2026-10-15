@@ -1,20 +1,31 @@
-baseURL                 = "/"
-locale                  = "en-us"
-title                   = "Hugo Theme Stack"
-theme                   = "hugo-theme-stack"
-# Theme i18n support
-# See i18n folder for available languages
-defaultContentLanguage  = "en"
-# Set hasCJKLanguage to true if DefaultContentLanguage is a CJK language
-# This will make .Summary and .WordCount behave correctly
-hasCJKLanguage          = true
+# ==============================================================================
+# 站点基础配置 (Site)
+# ==============================================================================
+baseURL = "https://ovoreguis.github.io/"
+title   = "OVORegulus 的个人博客"
+theme   = "hugo-theme-stack"
 
+# 站点主语言：仅中文。默认语言直接输出到根目录，不生成 /zh/ 等语言子目录
+defaultContentLanguage = "zh"
+locale                 = "zh-cn"
+hasCJKLanguage         = true
+enableRobotsTXT        = true
+
+# ==============================================================================
+# 分页 (Pagination)
+# ==============================================================================
 [pagination]
     pagerSize = 3
 
+# ==============================================================================
+# 固定链接 (Permalinks)
+# ==============================================================================
 [permalinks]
     post = "/p/:slug/"
     page = "/:slug/"
 
+# ==============================================================================
+# 第三方服务 (Services)
+# ==============================================================================
 [services.disqus]
     shortname = "hugo-theme-stack"
