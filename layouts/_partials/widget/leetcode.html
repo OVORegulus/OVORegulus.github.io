@@ -1,0 +1,79 @@
+{{- /*
+    LeetCode 刷题挂件（提交热力图 / 俗称「做题绿点」）。
+
+    数据来自 data/leetcode.json —— 由 scripts/fetch-leetcode.py 在构建时抓取生成
+    （见 .github/workflows/hugo.yml 里的 Fetch LeetCode stats 步骤）。
+    前端不做任何请求，也不依赖第三方图床，所以国内访问快、也不会被墙。
+
+    配置（config/_default/params.toml）：
+        [leetcode]
+            username = "你的用户名"   # 留空则整个挂件不显示
+            site     = "cn"           # cn = leetcode.cn，us = leetcode.com
+            title    = "刷题"
+
+    在 [widgets] 里启用：homepage = [..., { type = "leetcode" }]（也可放到 page）
+*/ -}}
+{{- $cfg := site.Params.leetcode | default dict -}}
+{{- $username := $cfg.username | default "" -}}
+{{- $data := site.Data.leetcode -}}
+
+{{- /* 没填用户名、或还没抓到数据（首次构建 / 抓取失败）时不渲染任何东西 */ -}}
+{{- if and $username $data -}}
+{{- $title := .Params.title | default $cfg.title | default "刷题" -}}
+{{- $host := cond (eq ($cfg.site | default "cn") "us") "leetcode.com" "leetcode.cn" -}}
+{{- /* username 是 URL 里的用户名（slug），displayname 只是显示用的昵称，两者常常不一样 */ -}}
+{{- $display := $cfg.displayname | default $username -}}
+
+{{- /* SVG 几何：每格 11 单位 + 3 单位间距，53 列 × 7 行，viewBox 保证再窄也能等比缩放 */ -}}
+{{- $cell := 11 -}}
+{{- $gap := 3 -}}
+{{- $cols := int $data.weeks -}}
+{{- $w := sub (mul $cols (add $cell $gap)) $gap -}}
+{{- $h := sub (mul 7 (add $cell $gap)) $gap -}}
+
+<section class="widget lc-widget">
+    <div class="widget-icon">
+        {{ partial "helper/icon" "code" }}
+    </div>
+    <h2 class="widget-title section-title">{{ $title }}</h2>
+
+    <div class="lc-panel">
+        <dl class="lc-stats">
+            <div>
+                <dt>连续</dt>
+                <dd>{{ $data.streak }} 天</dd>
+            </div>
+            <div>
+                <dt>累计活跃</dt>
+                <dd>{{ $data.activedays }} 天</dd>
+            </div>
+            <div>
+                <dt>已解决</dt>
+                <dd>{{ $data.solved.total }} 题</dd>
+            </div>
+            <div>
+                <dt>近一年</dt>
+                <dd>{{ $data.yeartotal }} 次</dd>
+            </div>
+        </dl>
+
+        <svg class="lc-svg" viewBox="0 0 {{ $w }} {{ $h }}" role="img"
+             aria-label="{{ $username }} 最近一年的 LeetCode 提交热力图">
+            {{- /* cells 是按「列优先」排的：先一列 7 天，再下一列，所以 col = 序号/7、row = 序号%7 */ -}}
+            {{- range $i, $c := $data.cells }}
+            {{- $col := div $i 7 }}
+            {{- $row := mod $i 7 }}
+            <rect x="{{ mul $col (add $cell $gap) }}" y="{{ mul $row (add $cell $gap) }}"
+                  width="{{ $cell }}" height="{{ $cell }}" rx="2"
+                  data-l="{{ $c.l }}">{{ if $c.c }}<title>{{ $c.d }}：{{ $c.c }} 次提交</title>{{ end }}</rect>
+            {{- end }}
+        </svg>
+
+        <div class="lc-foot">
+            <span class="lc-legend" aria-hidden="true">少<i data-l="0"></i><i data-l="1"></i><i data-l="2"></i><i data-l="3"></i><i data-l="4"></i>多</span>
+            <a class="lc-link" href="https://{{ $host }}/u/{{ $username }}/" target="_blank" rel="noopener"
+               title="数据抓取于 {{ $data.updated }}">@{{ $display }}</a>
+        </div>
+    </div>
+</section>
+{{- end -}}

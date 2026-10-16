@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    # 每天 22:17 UTC（= 次日 06:17 北京时间）重新构建一次，
+    # 目的是刷新 LeetCode 刷题数据（博客正文并不需要每天重建）。
+    - cron: '17 22 * * *'
 
 permissions:
   contents: read
@@ -38,6 +42,13 @@ jobs:
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
+
+      - name: Fetch LeetCode stats
+        # 抓「做题绿点」生成 data/leetcode.json（用户名读 config/_default/params.toml 的 [leetcode]）。
+        # 脚本内部对失败做了兜底：抓不到就保留仓库里上一次的数据并以 0 退出，
+        # 所以 LeetCode 改风控最多是数据不更新，不会把部署搞挂。continue-on-error 是双保险。
+        continue-on-error: true
+        run: python3 scripts/fetch-leetcode.py
 
       - name: Build with Hugo
         env:

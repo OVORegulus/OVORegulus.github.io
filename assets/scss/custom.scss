@@ -4,6 +4,145 @@
 // 所以这个文件里的规则最后加载，可以直接覆盖主题默认样式，且不用改主题本体。
 // ==============================================================================
 
+// ------------------------------------------------------------------------------
+// 深色模式配色 (Dark scheme palette)
+// 底色取自参考图的 #333739（冷调深灰），卡片 / 标签比底色亮一档，
+// 保持「页面底色 -> 卡片 -> 文字」三层由深到浅的格局。
+// ------------------------------------------------------------------------------
+[data-scheme="dark"] {
+    // 页面底色
+    --body-background: #333739;
+    // 卡片、标签、搜索框、归档列表的底色（比底色亮一档）
+    --card-background: #3d4245;
+
+    // 同色系的其余浅色表面，避免出现偏暖的灰
+    --blockquote-background-color: #41474b;
+    --tr-even-background-color: #454b4f;
+    --table-border-color: #6b7276;
+
+    // 正文与卡片主文字：纯白
+    --body-text-color: #ffffff;
+    --card-text-color-main: #ffffff;
+}
+
+// ------------------------------------------------------------------------------
+// LeetCode 刷题挂件（提交热力图，就是常说的「做题绿点」）
+// 结构见 layouts/_partials/widget/leetcode.html，数据由 scripts/fetch-leetcode.py
+// 抓成 data/leetcode.json 后静态渲染。配色走 CSS 变量，所以自动跟随明暗模式。
+// ------------------------------------------------------------------------------
+:root {
+    --lc-0: #ebedf0; // 当天没有提交
+    --lc-1: #9be9a8;
+    --lc-2: #40c463;
+    --lc-3: #30a14e;
+    --lc-4: #216e39; // 当天提交最多
+}
+
+[data-scheme="dark"] {
+    --lc-0: rgba(255, 255, 255, 0.07);
+    --lc-1: #2c5d47;
+    --lc-2: #35785a;
+    --lc-3: #419470;
+    --lc-4: #52b788; // 和背景音乐播放器的绿色强调色一致
+}
+
+.lc-widget {
+    .lc-panel {
+        @include card-style;
+        padding: var(--spacing-md);
+    }
+
+    .lc-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-xs) var(--spacing-md);
+        margin: 0 0 var(--spacing-sm);
+
+        div {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        dt {
+            font-size: 1.1rem;
+            color: var(--card-text-color-tertiary);
+        }
+
+        dd {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--card-text-color-main);
+            font-variant-numeric: tabular-nums;
+        }
+    }
+
+    // 53 × 7 的格子用内联 SVG 画：viewBox 固定，宽度 100% 等比缩放，
+    // 所以在侧边栏那么窄的地方也能完整显示一整年。
+    .lc-svg {
+        display: block;
+        width: 100%;
+        height: auto;
+
+        rect {
+            transition: opacity 0.15s ease;
+
+            &:hover {
+                opacity: 0.7;
+            }
+        }
+    }
+
+    .lc-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: var(--spacing-sm);
+        font-size: 1.1rem;
+        color: var(--card-text-color-tertiary);
+    }
+
+    .lc-legend {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+
+        i {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+    }
+
+    .lc-link {
+        color: var(--card-text-color-tertiary);
+        text-decoration: none;
+        transition: color 0.2s ease;
+
+        &:hover {
+            color: var(--lc-4);
+        }
+    }
+}
+
+// 色阶：热力图格子用 fill，右下角的图例用 background
+@for $i from 0 through 4 {
+    .lc-svg rect[data-l="#{$i}"] {
+        fill: var(--lc-#{$i});
+    }
+
+    .lc-legend i[data-l="#{$i}"] {
+        background-color: var(--lc-#{$i});
+    }
+}
+
+// -1 = 未来日期，只用来补齐格子，画成透明
+.lc-svg rect[data-l="-1"] {
+    fill: transparent;
+}
+
 // 播放键相对控制条中心的水平偏移量：
 //   0    = 严格居中（当前值）
 //   18px = 往右挪一点（右侧那组比左侧宽时，居中会显得偏左）

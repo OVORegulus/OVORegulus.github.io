@@ -1,0 +1,22 @@
+{{- /*
+    统计文章「字数」。
+
+    口径和 Word 的「字数」一致：中日韩文字每个字算 1，西文/数字每一段算 1 个词。
+    （Hugo 自带的 .WordCount 按空格切词，中文整段会被算成 1 个词，所以不能用。）
+
+    统计前先剔除这些东西，否则一篇配置教程里代码会把字数抬高一倍：
+      - 围栏代码块 ```...```   （正则里用 \x60 表示反引号，因为 Go 模板的裸字符串用反引号定界）
+      - 行内代码 `...`
+      - 短代码 {{< ... >}} / {{% ... %}}
+      - 链接地址，只留链接文字
+    用法：{{ $count := partial "helper/word-count" . }}
+*/ -}}
+{{- $text := .RawContent -}}
+{{- $text = replaceRE `(?s)\x60\x60\x60.*?\x60\x60\x60` "" $text -}}
+{{- $text = replaceRE `\x60[^\x60]*\x60` "" $text -}}
+{{- $text = replaceRE `\{\{[<%].*?[>%]\}\}` "" $text -}}
+{{- $text = replaceRE `https?://\S+` "" $text -}}
+{{- $text = replaceRE `!?\[([^\]]*)\]\([^)]*\)` "$1" $text -}}
+{{- $cjk := len (findRE `[\p{Han}\p{Hiragana}\p{Katakana}\p{Hangul}]` $text) -}}
+{{- $words := len (findRE `[\p{L}\p{N}]+` (replaceRE `[\p{Han}\p{Hiragana}\p{Katakana}\p{Hangul}]` " " $text)) -}}
+{{- return (add $cjk $words) -}}

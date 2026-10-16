@@ -15,6 +15,10 @@
  *      因此把搜索页排除，走整页跳转。
  *   4. 不做渐进增强兜底时的破坏：任何异常都回退到 location.href 整页跳转。
  *      脚本加载失败时，页面上没有任何东西被改过，链接照常工作。
+ *   5. 除了「栏里的内容」，还要同步那些『由模板决定、但不属于任何被替换容器』的东西：
+ *      - <body> 的 class（文章页的 article-page 决定卡片背景，不同步就会出现
+ *        「点进文章没有卡片背景、刷新一下才对」的错版）
+ *      - 右栏本身在不在（目录为空的页面根本没有 .right-sidebar）
  */
 (function () {
     'use strict';
@@ -25,6 +29,16 @@
     var SEL_MAIN = 'main.main';
     var SEL_RIGHT = '.right-sidebar';
     var SEL_TITLE = 'title';
+
+    /* <body> 的 class 是模板给出的（列表页为空、文章页 article-page、归档页 template-archives…），
+       而关键样式正是挂在它上面：例如 .article-page .main-article 才有卡片背景。
+       换页时 body 不会被重建，所以必须手动同步 —— 否则「首页 -> 点进文章」会丢掉卡片背景，
+       正文直接贴在页面底色上（刷新一次又好，因为整页加载会重新输出正确的 body class）。 */
+    var templateBodyClasses = splitClasses(document.body.getAttribute('class'));
+
+    function splitClasses(value) {
+        return (value || '').trim().split(/\s+/).filter(function (c) { return c; });
+    }
 
     // 这些路径不参与 PJAX（各自依赖自己的脚本，换页后无法重新初始化）
     // 目前为空：搜索页有自己的 search.js，已通过 setupSearch() 在换页后重新初始化。
@@ -104,11 +118,21 @@
                 // 交换主流内容（页脚在 main 内部，一并更新）
                 curMain.innerHTML = newMain.innerHTML;
 
-                // 右栏（归档/分类/标签云/TOC）也随页面变化
+                // body 的 class 也要跟着换，否则文章页拿不到 .article-page 的卡片背景
+                syncBodyClass(doc);
+
+                // 右栏（归档/分类/标签云/TOC）也随页面变化。
+                // 注意它并非每页都有（比如没有标题、目录为空的页面就没有右栏），
+                // 所以「有 / 没有」也要一起同步，不然会出现凭空多一栏或整栏消失。
                 var newRight = doc.querySelector(SEL_RIGHT);
                 var curRight = document.querySelector(SEL_RIGHT);
                 if (newRight && curRight) {
                     curRight.innerHTML = newRight.innerHTML;
+                } else if (newRight && !curRight) {
+                    // 模板里的 DOM 顺序是 左栏 -> 右栏 -> main，插在 main 前即归位
+                    curMain.parentNode.insertBefore(document.importNode(newRight, true), curMain);
+                } else if (!newRight && curRight) {
+                    curRight.parentNode.removeChild(curRight);
                 }
 
                 // 标题与各类 meta，尽量与整页加载保持一致
@@ -165,6 +189,28 @@
                 location.href = url.href;
             })
             .then(function () { swapping = false; });
+    }
+
+    /**
+     * 同步 <body> 的 class。
+     * @param {Document} doc 刚解析出来的目标页
+     *
+     * 只搬「上一份模板给出的 class」：换页前记下的那批里，目标页没有的删掉，
+     * 目标页有的补上。这样运行时由脚本自己加上的 class（#main-menu 的 show-menu、
+     * 播放器的 is-playing 等）不会被误删 —— 它们从来没进过模板清单。
+     */
+    function syncBodyClass(doc) {
+        var next = splitClasses(doc.body && doc.body.getAttribute('class'));
+
+        for (var i = 0; i < next.length; i++) {
+            document.body.classList.add(next[i]);
+        }
+        for (var j = 0; j < templateBodyClasses.length; j++) {
+            var old = templateBodyClasses[j];
+            if (next.indexOf(old) === -1) document.body.classList.remove(old);
+        }
+
+        templateBodyClasses = next;
     }
 
     /**
@@ -258,5 +304,5 @@
         else location.reload();
     });
 
-    window.__pjax = { load: load, canHandle: canHandle };
+    window.__pjax = { load: load, canHandle: canHandle, syncBodyClass: syncBodyClass };
 })();

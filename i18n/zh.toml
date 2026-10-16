@@ -1,0 +1,6 @@
+# 本站的翻译覆盖层：只需要写要改的键，其余键会回退到主题的 i18n/zh.toml。
+#
+# wordCount 用在 layouts/_partials/article/components/details.html 里，
+# 把主题的「阅读时长: {{ .Count }} 分钟」换成字数。
+[article]
+    wordCount = "{{ .Count }} 字"

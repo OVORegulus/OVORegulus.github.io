@@ -1,10 +1,24 @@
+# ==============================================================================
+# 站点基础配置 (Site)
+# ==============================================================================
+# ⚠️ TOML 的「裸键」必须写在任何 [表头] 之前，否则会被算进上面那个表里。
+#    之前 [colorScheme] 被放在文件最顶部，把下面的 mainSections / favicon /
+#    author / copyright 全并进了 colorScheme 表，于是页脚版权退化成站点标题、
+#    网站也没了 favicon。这里把顺序修正过来（[colorScheme] 挪到下面）。
 mainSections   = ["post"]
 rssFullContent = true
 favicon        = "img/avatar.png" #这个是头像
 
-# 文章署名与版权主体（页脚 "© 2020 - 2026 OVORegulus" 使用的就是这里）
+# 文章署名与版权主体（页脚 "© 2026 OVORegulus" 使用的就是这里）
 author    = "OVORegulus"
 copyright = "OVORegulus"
+
+# ==============================================================================
+# 颜色方案 (Color Scheme)
+# ==============================================================================
+[colorScheme]
+    toggle  = true
+    default = "dark"
 
 # ==============================================================================
 # 页脚配置 (Footer)
@@ -40,12 +54,30 @@ copyright = "OVORegulus"
         default = "Licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)"
 
 # ==============================================================================
+# LeetCode 刷题数据（挂件：布局见 layouts/_partials/widget/leetcode.html）
+# 数据由 scripts/fetch-leetcode.py 在构建时抓取，生成 data/leetcode.json。
+# 想手动更新一次：python3 scripts/fetch-leetcode.py
+# ==============================================================================
+[leetcode]
+    # ⚠️ 这里要填「用户名」= 个人主页 URL 里 /u/xxxx/ 的那一段，**不是昵称**。
+    #    你的昵称是 Regulusilove，但账号用户名是力扣随机分配的 frosty-7amportqdf
+    #    （位置：个人主页头像下面那行灰色小字，或直接看浏览器地址栏）。
+    username = "frosty-7amportqdf"
+    # 挂件里显示的名字（只影响显示，不影响抓取）
+    displayname = "Regulusilove"
+    # 数据源：cn = leetcode.cn，us = leetcode.com
+    site     = "cn"
+    # 挂件标题
+    title    = "刷题"
+
+# ==============================================================================
 # 挂件/组件配置 (Widgets) - 控制首页和页面的功能模块
 # ==============================================================================
 [widgets]
     # 首页显示的模块列表（按顺序排列）
     homepage = [
         { type = "search" },                # 搜索框
+        { type = "leetcode" },              # LeetCode 做题绿点（用户名在 [leetcode] 里配）
         { type = "archives", params = { limit = 5 } }, # 文章归档（显示最近5条）
         { type = "categories", params = { limit = 10 } }, # 分类列表（显示前10个）
         { type = "tag-cloud", params = { limit = 10 } },  # 标签云（显示前10个）
